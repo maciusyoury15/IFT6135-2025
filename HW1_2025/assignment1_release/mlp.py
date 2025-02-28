@@ -90,7 +90,8 @@ class MLP(torch.nn.Module):
         if activation == 'tanh':
             return torch.tanh(inputs)  # Tanh is fine to use as it's not simple
         elif activation == 'relu':
-            return torch.maximum(torch.tensor(0.0, device=inputs.device), inputs)  # Custom ReLU
+            # return torch.maximum(torch.tensor(0.0, device=inputs.device), inputs)  # Custom ReLU
+            return torch.maximum(inputs, torch.clamp(inputs, min=1e-12))
         elif activation == 'sigmoid':
             clamped_inputs = torch.clamp(inputs, min=-50, max=50)  # Prevents overflow in exp()
             return 1 / (1 + torch.exp(-clamped_inputs))  # Cus
