@@ -16,6 +16,7 @@ from mlp import MLP
 from resnet18 import ResNet18
 from mlpmixer import MLPMixer
 from tqdm import tqdm
+import torch.utils.data
 from torch.utils.data import DataLoader
 import time
 import os
