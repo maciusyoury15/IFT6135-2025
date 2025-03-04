@@ -4,13 +4,16 @@ import matplotlib.pyplot as plt
 import os
 import json
 
+from nltk.corpus.reader import titles
 
-def generate_plots(list_of_dirs, legend_names, save_path):
+
+def generate_plots(model, list_of_dirs, legend_names, save_path):
     """ Generate plots according to log 
     :param list_of_dirs: List of paths to log directories
     :param legend_names: List of legend names
     :param save_path: Path to save the figs
     """
+    assert model in ['relu', 'tanh', 'sigmoid']
     assert len(list_of_dirs) == len(legend_names), "Names and log directories must have same length"
     data = {}
     for logdir, name in zip(list_of_dirs, legend_names):
@@ -18,7 +21,13 @@ def generate_plots(list_of_dirs, legend_names, save_path):
         assert os.path.exists(os.path.join(logdir, 'results.json')), f"No json file in {logdir}"
         with open(json_path, 'r') as f:
             data[name] = json.load(f)
-    
+
+    titles = {
+        'train_accs' : 'Training Accuracy over epochs',
+        'val_accs' : 'Validation Accuracy over epochs',
+        'test_accs' : 'Test Accuracy over epochs'
+    }
+
     for yaxis in ['train_accs', 'valid_accs', 'train_losses', 'valid_losses']:
         fig, ax = plt.subplots()
         for name in data:
@@ -26,6 +35,7 @@ def generate_plots(list_of_dirs, legend_names, save_path):
         ax.legend()
         ax.set_xlabel('epochs')
         ax.set_ylabel(yaxis.replace('_', ' '))
+        ax.set_title(titles[yaxis])
         fig.savefig(os.path.join(save_path, f'{yaxis}.png'))
         
 
