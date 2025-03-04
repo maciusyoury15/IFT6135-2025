@@ -74,13 +74,13 @@ class MLP(torch.nn.Module):
         prev_size = input_size
         for hidden_size in hidden_sizes:
             hidden_layer = Linear(prev_size, hidden_size)
-            self._initialize_linear_layer(hidden_layer)
+            # self._initialize_linear_layer(hidden_layer)
             hidden_layers.append(hidden_layer)
             prev_size = hidden_size
 
         # Build output layer
         output_layer = Linear(prev_size, num_classes)
-        self._initialize_linear_layer(output_layer)
+        # self._initialize_linear_layer(output_layer)
 
         return hidden_layers, output_layer
 
@@ -90,20 +90,20 @@ class MLP(torch.nn.Module):
         if activation == 'tanh':
             return torch.tanh(inputs)  # Tanh is fine to use as it's not simple
         elif activation == 'relu':
-            return torch.maximum(inputs, torch.clamp(inputs, min=1e-12))
+            return torch.clamp(inputs, min=0)
         elif activation == 'sigmoid':
             clamped_inputs = torch.clamp(inputs, min=-50, max=50)  # Prevents overflow in exp()
-            return 1 / (1 + torch.exp(-clamped_inputs))  # Cus
+            return 1 / (1 + torch.exp(-clamped_inputs))
         else:
             raise ValueError(f"Invalid activation function: {activation}")  # Ensures function always returns a value
 
     def _initialize_linear_layer(self, module: nn.Module) -> None:
         """ For bias set to zeros. For weights set to glorot normal """
-        if isinstance(module, nn.Linear):  # Ensure it's a Linear layer
-            fan_in, fan_out = module.weight.shape  # Get input and output dimensions
-            std = (2.0 / (fan_in + fan_out)) ** 0.5  # Compute Xavier std
-            module.weight.data.normal_(mean=0.0, std=std)  # Apply normal initialization
-            module.bias.data.zero_()  # Set bias to zeros
+        # if isinstance(module, nn.Linear):  # Ensure it's a Linear layer
+        fan_in, fan_out = module.weight.shape  # Get input and output dimensions
+        std = (2.0 / (fan_in + fan_out)) ** 0.5  # Compute Xavier std
+        module.weight.data.normal_(mean=0.0, std=std)  # Apply normal initialization
+        module.bias.data.zero_()  # Set bias to zeros
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         """ Forward images and compute logits.

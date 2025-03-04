@@ -4,13 +4,14 @@ import matplotlib.pyplot as plt
 import os
 import json
 
+
 def generate_plots(model, list_of_dirs, legend_names, save_path):
     """ Generate plots according to log 
     :param list_of_dirs: List of paths to log directories
     :param legend_names: List of legend names
     :param save_path: Path to save the figs
     """
-    assert model in ['relu', 'tanh', 'sigmoid']
+    assert model in ['mlp', 'resnet18', 'mlpmixer']
     assert len(list_of_dirs) == len(legend_names), "Names and log directories must have same length"
     data = {}
     for logdir, name in zip(list_of_dirs, legend_names):
@@ -20,11 +21,12 @@ def generate_plots(model, list_of_dirs, legend_names, save_path):
             data[name] = json.load(f)
 
     titles = {
-        'train_accs' : 'Training Accuracy over epochs',
-        'val_accs' : 'Validation Accuracy over epochs',
-        'test_accs' : 'Test Accuracy over epochs'
+        'train_accs': "Training Accuracy Over Epochs",
+        'valid_accs': "Validation Accuracy Over Epochs",
+        'train_losses': "Training Loss Over Epochs",
+        'valid_losses': "Validation Loss Over Epochs"
     }
-
+    
     for yaxis in ['train_accs', 'valid_accs', 'train_losses', 'valid_losses']:
         fig, ax = plt.subplots()
         for name in data:
@@ -32,7 +34,7 @@ def generate_plots(model, list_of_dirs, legend_names, save_path):
         ax.legend()
         ax.set_xlabel('epochs')
         ax.set_ylabel(yaxis.replace('_', ' '))
-        ax.set_title(f"{model}: {titles[yaxis]}")
+        ax.set_title(f'{model}: {titles[yaxis]}')
         fig.savefig(os.path.join(save_path, f'{yaxis}.png'))
         
 
@@ -68,19 +70,16 @@ def cross_entropy_loss(logits: torch.Tensor, labels: torch.Tensor):
     :param labels: [batch_size]
     :return loss 
     """
-    # Compute softmax manually
     exp_logits = torch.exp(logits)  # Exponentiate
     sum_exp_logits = torch.sum(exp_logits, dim=1, keepdim=True)  # Sum over classes
     probs = exp_logits / sum_exp_logits  # Normalize to get probabilities
 
-    # Get the probability of the true class
-    true_class_probs = probs[torch.arange(labels.shape[0]), labels]
+    # Compute negative log likelihood for correct class probabilities
+    true_class_probs = probs[torch.arange(labels.shape[0]), labels]  # Extract true class probs
+    loss = -torch.log(true_class_probs + 1e-12)  # Compute loss
 
-    # Compute the negative log-likelihood
-    loss = -torch.log(true_class_probs + 1e-15)
+    return loss.mean()  # Mean loss over batch
 
-    # Return mean loss over the batch
-    return loss.mean()
 
 def compute_accuracy(logits: torch.Tensor, labels: torch.Tensor):
     """ Compute the accuracy of the batch """
