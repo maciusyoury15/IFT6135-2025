@@ -4,9 +4,6 @@ import matplotlib.pyplot as plt
 import os
 import json
 
-from nltk.corpus.reader import titles
-
-
 def generate_plots(model, list_of_dirs, legend_names, save_path):
     """ Generate plots according to log 
     :param list_of_dirs: List of paths to log directories
