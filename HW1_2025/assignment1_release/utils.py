@@ -35,7 +35,7 @@ def generate_plots(model, list_of_dirs, legend_names, save_path):
         ax.legend()
         ax.set_xlabel('epochs')
         ax.set_ylabel(yaxis.replace('_', ' '))
-        ax.set_title(titles[yaxis])
+        ax.set_title(f"{model}: {titles[yaxis]}")
         fig.savefig(os.path.join(save_path, f'{yaxis}.png'))
         
 
