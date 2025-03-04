@@ -61,8 +61,10 @@ def cross_entropy_loss(logits: torch.Tensor, labels: torch.Tensor):
     :param labels: [batch_size]
     :return loss 
     """
-    # Convert logits to probabilities using softmax
-    probs = torch.softmax(logits, dim=1)
+    # Compute softmax manually
+    exp_logits = torch.exp(logits)  # Exponentiate
+    sum_exp_logits = torch.sum(exp_logits, dim=1, keepdim=True)  # Sum over classes
+    probs = exp_logits / sum_exp_logits  # Normalize to get probabilities
 
     # Get the probability of the true class
     true_class_probs = probs[torch.arange(labels.shape[0]), labels]
