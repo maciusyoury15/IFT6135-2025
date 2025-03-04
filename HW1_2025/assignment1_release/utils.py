@@ -77,7 +77,7 @@ def cross_entropy_loss(logits: torch.Tensor, labels: torch.Tensor):
     true_class_probs = probs[torch.arange(labels.shape[0]), labels]
 
     # Compute the negative log-likelihood
-    loss = -torch.log(true_class_probs)
+    loss = -torch.log(true_class_probs + 1e-15)
 
     # Return mean loss over the batch
     return loss.mean()
