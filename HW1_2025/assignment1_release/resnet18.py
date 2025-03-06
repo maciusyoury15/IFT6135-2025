@@ -8,6 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
+import math
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -74,44 +76,50 @@ class ResNet18(nn.Module):
         return logits
 
 
-    def visualize(self, logdir: str, layer_name: str):
-        """ Visualize the kernel in the desired directory """
+    def visualize(self, logdir: str, layer_name: str='conv1'):
+        """Visualize the kernels of a convolutional layer."""
+        
+        # Find the layer by its name
+        layer = dict(self.named_modules()).get(layer_name, None)
 
-        # Find the layer by the name
-        layer = dict(self.named_modules())[layer_name]
+        # Ensure the layer exists and has weight data
+        if layer is None or not isinstance(layer, nn.Conv2d):
+            print(f"Layer '{layer_name}' not found or is not a Conv2d layer.")
+            return
 
-        # Ensure the layer has weight data
-        if isinstance(layer, nn.Conv2d):
-            # Extract the weights (kernels) from the layer
-            kernels = layer.weight.data.cpu().numpy()
+        # Extract the weights (kernels) from the layer
+        kernels = layer.weight.data.cpu().numpy()
 
-            # Normalize the kernel values for better visualization
-            min_kernel = kernels.min()
-            max_kernel = kernels.max()
-            kernels = (kernels - min_kernel) / (max_kernel - min_kernel)  # Normalize between 0 and 1
+        # Normalize the kernel values between 0 and 1
+        kernels = (kernels - kernels.min()) / (kernels.max() - kernels.min())
 
-            # Get the number of kernels and the size of each kernel
-            num_kernels = kernels.shape[0]
-            kernel_size = kernels.shape[2]  # Assuming square kernels, e.g., 3x3
+        # Get the number of kernels and kernel size
+        num_kernels, in_channels, kernel_h, kernel_w = kernels.shape
 
-            # Set up the grid for visualization
-            grid_size = int(num_kernels ** 0.5)  # Arrange kernels in a square grid
-            fig, axes = plt.subplots(grid_size, grid_size, figsize=(10, 10))
+        # Determine grid size for visualization
+        grid_size = math.ceil(math.sqrt(num_kernels))
 
-            for i, ax in enumerate(axes.flat):
-                if i < num_kernels:
-                    # Plot each kernel (grayscale image)
-                    ax.imshow(kernels[i, 0, :, :], cmap='gray')
-                    ax.axis('off')
+        # Create figure
+        fig, axes = plt.subplots(grid_size, grid_size, figsize=(10, 10))
+        fig.suptitle(f"Kernels of {layer_name}", fontsize=14)
+
+        for i, ax in enumerate(axes.flat):
+            if i < num_kernels:
+                if in_channels == 3:
+                    # Convert 3-channel kernel into an RGB image
+                    kernel_img = np.transpose(kernels[i], (1, 2, 0))  # (H, W, C)
+                    ax.imshow(kernel_img)
                 else:
-                    ax.axis('off')  # Empty axes if we don't have enough kernels
+                    # Grayscale visualization for single-channel kernels
+                    ax.imshow(kernels[i, 0], cmap='gray')
+                ax.set_title(f"Kernel {i}")
+                ax.axis('off')
+            else:
+                ax.axis('off')  # Hide empty subplots
 
-            # Save the figure in the specified logdir
-            os.makedirs(logdir, exist_ok=True)
-            plt.suptitle(f"Kernels of {layer_name}")
-            save_path = os.path.join(logdir, f"{layer_name}_kernels.png")
-            plt.savefig(save_path)
-            plt.close(fig)
-            print(f"Kernel visualization saved to {save_path}")
-        else:
-            print(f"Layer {layer_name} is not a Conv2d layer, skipping visualization.")
+        # Save the figure
+        os.makedirs(logdir, exist_ok=True)
+        save_path = os.path.join(logdir, f"Resnet18_{layer_name}_kernels.png")
+        plt.savefig(save_path, bbox_inches='tight')
+        plt.close(fig)
+        print(f"Kernel visualization saved to {save_path}")

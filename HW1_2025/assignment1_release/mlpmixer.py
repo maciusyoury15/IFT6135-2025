@@ -1,7 +1,7 @@
 from torch import nn
 import matplotlib.pyplot as plt
 import os
-
+import numpy as np
 
 class PatchEmbed(nn.Module):
     """ 2D Image to Patch Embedding
@@ -133,8 +133,7 @@ class MLPMixer(nn.Module):
         return logits
     
     def visualize(self, logdir: str, layer_idx: int = 0):
-        """ Visualize the token mixer layer 
-        in the desired directory """
+        """ Visualize the token mixer layer in the desired directory """
         # Ensure the directory exists
         os.makedirs(logdir, exist_ok=True)
 
@@ -165,3 +164,11 @@ class MLPMixer(nn.Module):
         plt.close()
 
         print(f"Visualization saved at {save_path}")
+
+        #  Additional analysis
+        print("Weight Matrix Shape:", token_mixer_weights.shape)
+        print("Weight Statistics:")
+        print("Mean:", np.mean(token_mixer_weights))
+        print("Standard Deviation:", np.std(token_mixer_weights))
+        print("Min:", np.min(token_mixer_weights))
+        print("Max:", np.max(token_mixer_weights))
