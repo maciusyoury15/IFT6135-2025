@@ -14,7 +14,8 @@ class PatchEmbed(nn.Module):
         self.grid_size = img_size // patch_size
         self.num_patches = self.grid_size * self.grid_size
         
-        self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size =patch_size, stride =patch_size)
+        self.proj = nn.Conv2d(in_channels=in_chans, out_channels=embed_dim, kernel_size =patch_size,
+                              stride =patch_size, padding=0, groups=1)
 
     def forward(self, x):
         """
@@ -62,7 +63,7 @@ class MixerBlock(nn.Module):
     Based on: 'MLP-Mixer: An all-MLP Architecture for Vision' - https://arxiv.org/abs/2105.01601
     """
     def __init__(
-            self, dim, seq_len, mlp_ratio=(0.5, 4.0),
+            self, dim, seq_len, mlp_ratio=(0.5, 1.0),
             activation='gelu', drop=0., drop_path=0.):
         super(MixerBlock, self).__init__()
         act_layer = {'gelu': nn.GELU, 'relu': nn.ReLU}[activation]
@@ -87,7 +88,7 @@ class MixerBlock(nn.Module):
 
 class MLPMixer(nn.Module):
     def __init__(self, num_classes, img_size, patch_size, embed_dim, num_blocks, 
-                 drop_rate=0., activation='gelu'):
+                 drop_rate=0., activation='gelu', mlp_ratio=(0.5, 1.0)):
         super(MLPMixer, self).__init__()
         self.patchemb = PatchEmbed(img_size=img_size, 
                                    patch_size=patch_size, 
@@ -95,7 +96,8 @@ class MLPMixer(nn.Module):
                                    embed_dim=embed_dim)
         self.blocks = nn.Sequential(*[
             MixerBlock(
-                dim=embed_dim, seq_len=self.patchemb.num_patches, 
+                dim=embed_dim, seq_len=self.patchemb.num_patches,
+                mlp_ratio=mlp_ratio,
                 activation=activation, drop=drop_rate)
             for _ in range(num_blocks)])
         self.norm = nn.LayerNorm(embed_dim)

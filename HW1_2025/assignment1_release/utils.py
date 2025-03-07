@@ -85,3 +85,64 @@ def compute_accuracy(logits: torch.Tensor, labels: torch.Tensor):
     """ Compute the accuracy of the batch """
     acc = (logits.argmax(dim=1) == labels).float().mean()
     return acc
+
+
+def comparison_efficiency_by_layer_type(comprehensive_results: list, logdir: str):
+    # Visualization
+    plt.figure(figsize=(15, 10))
+
+    # Accuracy Comparison
+    plt.subplot(2, 2, 1)
+    names = [result["configuration_name"] for result in comprehensive_results]
+    best_accuracies = [result["best_validation_accuracy"] for result in comprehensive_results]
+    plt.bar(names, best_accuracies)
+    plt.title('Best Validation Accuracy by Layer Width')
+    plt.ylabel('Accuracy')
+    plt.xticks(rotation=45)
+
+    # Training vs Validation Accuracy Plots
+    plt.subplot(2, 2, 2)
+    for result in comprehensive_results:
+        plt.plot(result["validation_accuracies"], 
+                 label=f'{result["configuration_name"]} (Val)')
+        plt.plot(result["train_accuracies"], 
+                 linestyle='--', 
+                 label=f'{result["configuration_name"]} (Train)')
+    plt.title('Training and Validation Accuracy Curves')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Loss Comparison
+    plt.subplot(2, 2, 3)
+    for result in comprehensive_results:
+        plt.plot(result["validation_losses"], 
+                 label=f'{result["configuration_name"]} (Val Loss)')
+        plt.plot(result["train_losses"], 
+                 linestyle='--', 
+                 label=f'{result["configuration_name"]} (Train Loss)')
+    plt.title('Training and Validation Loss Curves')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Overfitting Metric
+    plt.subplot(2, 2, 4)
+    overfitting_metrics = []
+    for result in comprehensive_results:
+        # Calculate the gap between train and validation accuracy
+        accuracy_gaps = [
+            train - val for train, val in 
+            zip(result["train_accuracies"], result["validation_accuracies"])
+        ]
+        overfitting_metric = np.mean(accuracy_gaps[-5:])  # Average of last 5 epochs
+        overfitting_metrics.append(overfitting_metric)
+    
+    plt.bar(names, overfitting_metrics)
+    plt.title('Overfitting Metric\n(Lower is Better)')
+    plt.ylabel('Accuracy Gap (Train - Val)')
+    plt.xticks(rotation=45)
+
+    plt.tight_layout()
+    plt.savefig(logdir)
+    plt.close()
